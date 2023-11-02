@@ -8,3 +8,12 @@ Content-Type: application/json
     "password": "najmul",
     "password_confirmation": "najmul"
 }
+
+### LOGIN
+POST http://localhost:3000/api/v1/auth/login
+Content-Type: application/json
+
+{
+    "email": "najmul@gmail.com",
+    "password": "najmul"
+}

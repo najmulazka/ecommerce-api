@@ -21,6 +21,13 @@ passport.use(
             googleid: profile.id,
           },
         });
+
+        let profiles = await prisma.profiles.upsert({
+          where: { userId: user.id },
+          update: { userId: user.id },
+          create: { userId: user.id },
+        });
+
         done(null, user);
       } catch (err) {
         done(err, null);
