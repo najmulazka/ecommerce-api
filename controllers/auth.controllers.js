@@ -49,6 +49,32 @@ module.exports = {
     }
   },
 
+  login: async (req, res, next) => {
+    try {
+      let { email, password } = req.body;
+      const userExist = await prisma.users.findUnique({ where: { email } });
+      if (!userExist) {
+        return res.status(400).json({ status: false, message: 'Bad Request', err: 'Email or password vailed', data: null });
+      }
+
+      const match = await bcrypt.compare(password, userExist.password);
+      if (!match) {
+        return res.status(400).json({ status: false, message: 'Bad Request', err: 'Email or password vailed', data: null });
+      }
+
+      let token = jwt.sign({ id: userExist.id }, JWT_SECRET_KEY);
+
+      return res.status(200).json({
+        status: false,
+        message: 'OK',
+        err: null,
+        data: { userExist, token },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   googleOauth2: (req, res) => {
     let token = jwt.sign({ id: req.user.id }, JWT_SECRET_KEY);
 
@@ -56,7 +82,10 @@ module.exports = {
       status: true,
       message: 'OK',
       err: null,
-      data: { user: { id: req.user.id, name: req.user.name, email: req.user.email }, token },
+      data: {
+        user: { id: req.user.id, name: req.user.name, email: req.user.email },
+        token,
+      },
     });
   },
 };
