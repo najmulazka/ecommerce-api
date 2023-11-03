@@ -36,6 +36,7 @@ model Products{
   id Int @id @default(autoincrement())
   nama_produk String
   product_picture String
+  fileId String
   deskripsi String?
   harga Float
   stok Int 
