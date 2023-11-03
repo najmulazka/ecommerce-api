@@ -26,6 +26,8 @@ model Profiles{
   nama_lengkap String?
   alamat String?
   nomor_telepon String?
+  profile_picture String?
+  fileId String?
   userId Int @unique
   user Users @relation(fields: [userId], references: [id])
 }
@@ -33,6 +35,7 @@ model Profiles{
 model Products{
   id Int @id @default(autoincrement())
   nama_produk String
+  product_picture String
   deskripsi String?
   harga Float
   stok Int 
@@ -45,7 +48,7 @@ model Products{
 
 model Categorys{
   id Int @id @default(autoincrement())
-  nama_kategori String
+  nama_kategori String @unique
   product Products[]
 }
 
