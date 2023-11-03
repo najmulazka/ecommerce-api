@@ -4,6 +4,24 @@ const path = require('path');
 
 module.exports = {
   // Fitur update profile
+  detailProfile: async (req, res, next) => {
+    try {
+      const profileExist = await prisma.profiles.findUnique({
+        where: { userId: req.users.id },
+      });
+
+      return res.status(200).json({
+        status: true,
+        message: 'OK!',
+        err: null,
+        data: profileExist,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Fitur update profile
   updateProfile: async (req, res, next) => {
     try {
       let { nama_lengkap, alamat, nomor_telepon } = req.body;
