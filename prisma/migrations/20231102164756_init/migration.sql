@@ -15,6 +15,8 @@ CREATE TABLE "Profiles" (
     "nama_lengkap" TEXT,
     "alamat" TEXT,
     "nomor_telepon" TEXT,
+    "profile_picture" TEXT,
+    "fileId" TEXT,
     "userId" INTEGER NOT NULL,
 
     CONSTRAINT "Profiles_pkey" PRIMARY KEY ("id")
@@ -24,6 +26,7 @@ CREATE TABLE "Profiles" (
 CREATE TABLE "Products" (
     "id" SERIAL NOT NULL,
     "nama_produk" TEXT NOT NULL,
+    "product_picture" TEXT NOT NULL,
     "deskripsi" TEXT,
     "harga" DOUBLE PRECISION NOT NULL,
     "stok" INTEGER NOT NULL,
@@ -68,6 +71,9 @@ CREATE UNIQUE INDEX "Users_email_key" ON "Users"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Profiles_userId_key" ON "Profiles"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Categorys_nama_kategori_key" ON "Categorys"("nama_kategori");
 
 -- AddForeignKey
 ALTER TABLE "Profiles" ADD CONSTRAINT "Profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

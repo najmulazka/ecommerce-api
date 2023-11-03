@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET_KEY } = process.env;
 
 module.exports = {
+  // Fitur registrasi
   register: async (req, res, next) => {
     try {
       let { name, email, password, password_confirmation } = req.body;
@@ -21,18 +22,11 @@ module.exports = {
       }
 
       const encriptedPassword = await bcrypt.hash(password, 10);
-      const user = await prisma.users.create({
-        data: {
-          name,
-          email,
-          password: encriptedPassword,
-        },
-      });
+      const result = await prisma.$transaction(async (prisma) => {
+        const user = await prisma.users.create({ data: { name, email, password: encriptedPassword } });
+        const profile = await prisma.profiles.create({ data: { userId: user.id } });
 
-      const profile = await prisma.profiles.create({
-        data: {
-          userId: user.id,
-        },
+        return { user, profile };
       });
 
       return res.status(201).json({
@@ -40,8 +34,8 @@ module.exports = {
         message: 'Created!',
         err: null,
         data: {
-          user: { id: user.id, name: user.name, email: user.email },
-          profile: { id: profile.id, userId: profile.userId },
+          user: { id: result.user.id, name: result.user.name, email: result.user.email },
+          profile: { id: result.profile.id, userId: result.profile.userId },
         },
       });
     } catch (err) {
@@ -49,9 +43,13 @@ module.exports = {
     }
   },
 
+  // Fitur login
   login: async (req, res, next) => {
     try {
       let { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing email or password', data: null });
+      }
       const userExist = await prisma.users.findUnique({ where: { email } });
       if (!userExist) {
         return res.status(400).json({ status: false, message: 'Bad Request', err: 'Email or password vailed', data: null });
@@ -68,13 +66,14 @@ module.exports = {
         status: false,
         message: 'OK',
         err: null,
-        data: { userExist, token },
+        data: { user: { name: userExist.name, email: userExist.email }, token },
       });
     } catch (err) {
       next(err);
     }
   },
 
+  // Fitur login menggunakan akun google
   googleOauth2: (req, res) => {
     let token = jwt.sign({ id: req.user.id }, JWT_SECRET_KEY);
 
