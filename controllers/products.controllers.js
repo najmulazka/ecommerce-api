@@ -1,8 +1,10 @@
 const prisma = require('../libs/prisma');
 const imagekit = require('../libs/imagekit');
 const path = require('path');
+const { getPagination } = require('../libs/pagination');
 
 module.exports = {
+  // Feature input product
   inputProduct: async (req, res, next) => {
     try {
       let { nama_produk, deskripsi, harga, stok, nama_kategori } = req.body;
@@ -57,6 +59,35 @@ module.exports = {
         message: 'Created!',
         err: null,
         data: product,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Feature show products
+  products: async (req, res, next) => {
+    try {
+      let { limit = 10, page = 1 } = req.query;
+      limit = Number(limit);
+      page = Number(page);
+
+      const products = await prisma.products.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      const { _count } = await prisma.products.aggregate({
+        _count: { id: true },
+      });
+
+      let pagination = getPagination(req, _count.id, limit, page);
+
+      return res.status(200).json({
+        status: true,
+        message: 'OK!',
+        err: null,
+        data: { pagination, products },
       });
     } catch (err) {
       next(err);
