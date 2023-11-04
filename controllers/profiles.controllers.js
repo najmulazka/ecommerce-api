@@ -3,7 +3,7 @@ const imagekit = require('../libs/imagekit');
 const path = require('path');
 
 module.exports = {
-  // Fitur update profile
+  // Fitur detail profile
   detailProfile: async (req, res, next) => {
     try {
       const profileExist = await prisma.profiles.findUnique({
