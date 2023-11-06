@@ -3,11 +3,27 @@ const imagekit = require('../libs/imagekit');
 const path = require('path');
 
 module.exports = {
-  // Fitur detail profile
+  // Feature Detail Profile
   detailProfile: async (req, res, next) => {
     try {
-      const profileExist = await prisma.profiles.findUnique({
-        where: { userId: req.users.id },
+      const profileExist = await prisma.users.findUnique({
+        where: { id: req.users.id },
+        select: {
+          id: true,
+          email: true,
+          googleId: true,
+          profiles: {
+            select: {
+              id: true,
+              fullName: true,
+              address: true,
+              phoneNumber: true,
+              profilePicture: true,
+              fileId: true,
+              userId: true,
+            },
+          },
+        },
       });
 
       return res.status(200).json({
@@ -21,10 +37,10 @@ module.exports = {
     }
   },
 
-  // Fitur update profile
+  // Feature Update Profile
   updateProfile: async (req, res, next) => {
     try {
-      let { nama_lengkap, alamat, nomor_telepon } = req.body;
+      let { fullName, address, phoneNumber } = req.body;
       if (!req.file) {
         return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing file', data: null });
       }
@@ -36,26 +52,26 @@ module.exports = {
         file: strFile,
       });
 
-      const profile = await prisma.profiles.upsert({
+      const profiles = await prisma.profiles.upsert({
         where: { userId: req.users.id },
         create: {
           userId: req.users.id,
-          nama_lengkap,
-          alamat,
-          nomor_telepon,
-          profile_picture: url,
+          fullName,
+          address,
+          phoneNumber,
+          profilePicture: url,
           fileId,
         },
         update: {
-          nama_lengkap,
-          alamat,
-          nomor_telepon,
-          profile_picture: url,
+          fullName,
+          address,
+          phoneNumber,
+          profilePicture: url,
           fileId,
         },
       });
 
-      if (!profile) {
+      if (!profiles) {
         return res.status(400).json({ status: false, message: 'Bad Request!', err: null, data: null });
       }
 
@@ -63,7 +79,14 @@ module.exports = {
         status: true,
         message: 'OK!',
         err: null,
-        data: { profiles: profile },
+        data: {
+          users: {
+            id: req.users.id,
+            email: req.users.email,
+            googleId: req.users.googleId,
+            profiles,
+          },
+        },
       });
     } catch (err) {
       next(err);

@@ -4,15 +4,15 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET_KEY } = process.env;
 
 module.exports = {
-  // Fitur registrasi
+  // Feature Register
   register: async (req, res, next) => {
     try {
-      let { name, email, password, password_confirmation } = req.body;
-      if (!name || !email || !password) {
-        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing name or email or password', data: null });
+      let { fullName, email, password, passwordConfirmation } = req.body;
+      if (!fullName || !email || !password || !passwordConfirmation) {
+        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing full name or email or password', data: null });
       }
 
-      if (password != password_confirmation) {
+      if (password != passwordConfirmation) {
         return res.status(400).json({ status: false, message: 'Bad Request!', err: 'please ensure that the password and password confirmation match!', data: null });
       }
 
@@ -23,10 +23,10 @@ module.exports = {
 
       const encriptedPassword = await bcrypt.hash(password, 10);
       const result = await prisma.$transaction(async (prisma) => {
-        const user = await prisma.users.create({ data: { name, email, password: encriptedPassword } });
-        const profile = await prisma.profiles.create({ data: { userId: user.id } });
+        const users = await prisma.users.create({ data: { email, password: encriptedPassword } });
+        const profiles = await prisma.profiles.create({ data: { userId: users.id, fullName } });
 
-        return { user, profile };
+        return { users, profiles };
       });
 
       return res.status(201).json({
@@ -34,8 +34,15 @@ module.exports = {
         message: 'Created!',
         err: null,
         data: {
-          user: { id: result.user.id, name: result.user.name, email: result.user.email },
-          profile: { id: result.profile.id, userId: result.profile.userId },
+          users: {
+            id: result.users.id,
+            email: result.users.email,
+            profiles: {
+              id: result.profiles.id,
+              fullName: result.profiles.fullName,
+              userId: result.profiles.userId,
+            },
+          },
         },
       });
     } catch (err) {
@@ -43,14 +50,27 @@ module.exports = {
     }
   },
 
-  // Fitur login
+  // Feature Login
   login: async (req, res, next) => {
     try {
       let { email, password } = req.body;
       if (!email || !password) {
         return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing email or password', data: null });
       }
-      const userExist = await prisma.users.findUnique({ where: { email } });
+      const userExist = await prisma.users.findUnique({
+        where: { email },
+        include: {
+          profiles: {
+            select: {
+              fullName: true,
+              address: true,
+              phoneNumber: true,
+              profilePicture: true,
+              fileId: true,
+            },
+          },
+        },
+      });
       if (!userExist) {
         return res.status(400).json({ status: false, message: 'Bad Request', err: 'Email or password vailed', data: null });
       }
@@ -66,23 +86,48 @@ module.exports = {
         status: false,
         message: 'OK',
         err: null,
-        data: { user: { name: userExist.name, email: userExist.email }, token },
+        data: {
+          users: {
+            id: userExist.id,
+            email: userExist.email,
+            googleid: userExist.googleid,
+            profiles: {
+              fullName: userExist.profiles.fullName,
+              address: userExist.profiles.address,
+              phoneNumber: userExist.profiles.phoneNumber,
+              profilePicture: userExist.profiles.profilePicture,
+              fileIdy: userExist.profiles.fileIdy,
+            },
+          },
+          token,
+        },
       });
     } catch (err) {
       next(err);
     }
   },
 
-  // Fitur login menggunakan akun google
-  googleOauth2: (req, res) => {
+  // Feature Login With Account Google
+  googleOauth2: async (req, res) => {
     let token = jwt.sign({ id: req.user.id }, JWT_SECRET_KEY);
+    const profiles = await prisma.profiles.findUnique({ where: { userId: req.user.id } });
 
     return res.status(200).json({
       status: true,
       message: 'OK',
       err: null,
       data: {
-        user: { id: req.user.id, name: req.user.name, email: req.user.email },
+        users: {
+          id: req.user.id,
+          email: req.user.email,
+          profiles: {
+            fullName: profiles.fullName,
+            address: profiles.address,
+            phoneNumber: profiles.phoneNumber,
+            profilePicture: profiles.profilePicture,
+            fileId: profiles.fileId,
+          },
+        },
         token,
       },
     });

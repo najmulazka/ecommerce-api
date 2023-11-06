@@ -12,63 +12,70 @@ datasource db {
 
 model Users{
   id Int @id @default(autoincrement())
-  name String
   email String @unique
   password String?
-  googleid String?
-  profile Profiles?
-  product Products[]
-  order Orders[]
+  googleId String?
+  profiles Profiles?
+  products Products[]
+  orders Orders[]
 }
 
 model Profiles{
   id Int @id @default(autoincrement())
-  nama_lengkap String?
-  alamat String?
-  nomor_telepon String?
-  profile_picture String?
+  fullName String?
+  address String?
+  phoneNumber String?
+  profilePicture String?
   fileId String?
   userId Int @unique
-  user Users @relation(fields: [userId], references: [id])
+  users Users @relation(fields: [userId], references: [id])
 }
 
 model Products{
   id Int @id @default(autoincrement())
-  nama_produk String
-  product_picture String
+  productName String
+  description String?
+  price Float
+  stock Int 
+  productPicture String
   fileId String
-  deskripsi String?
-  harga Float
-  stok Int 
-  categoriId Int
   userId Int
-  user Users @relation(fields: [userId], references: [id])
-  category Categorys @relation(fields: [categoriId], references: [id])
-  orederDetail OrderDetails[]
+  users Users @relation(fields: [userId], references: [id])
+  categories CategoriesOnProducts[]
+  orederDetails OrderDetails[]
 }
 
 model Categorys{
   id Int @id @default(autoincrement())
-  nama_kategori String @unique
-  product Products[]
+  categoryName String @unique
+  products CategoriesOnProducts[]
+}
+
+model CategoriesOnProducts {
+  products       Products     @relation(fields: [productId], references: [id])
+  productId    Int 
+  categorys   Categorys @relation(fields: [categoryId], references: [id])
+  categoryId Int 
+
+  @@id([productId, categoryId])
 }
 
 model Orders{
   id Int @id @default(autoincrement())
-  tanggal_pesan DateTime
-  alamat_pengiriman String
+  orderDate DateTime
+  shoppingAddress String
   userId Int
-  total_harga Float
-  user Users @relation(fields: [userId], references: [id])
-  orderDetail OrderDetails[]
+  totalPrice Float
+  users Users @relation(fields: [userId], references: [id])
+  orderDetails OrderDetails[]
 }
 
 model OrderDetails{
   id Int @id @default(autoincrement())
   orderId    Int
   productId  Int
-  jumlah   Int
-  sub_total Float
-  product    Products @relation(fields: [productId], references: [id])
-  order      Orders   @relation(fields: [orderId], references: [id])
+  amount   Int
+  subTotal Float
+  products    Products @relation(fields: [productId], references: [id])
+  orders      Orders   @relation(fields: [orderId], references: [id])
 }

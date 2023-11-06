@@ -14,15 +14,19 @@ passport.use(
       try {
         let user = await prisma.users.upsert({
           where: { email: profile.emails[0].value },
-          update: { googleid: profile.id },
+          update: { googleId: profile.id },
           create: {
-            name: profile.displayName,
             email: profile.emails[0].value,
-            googleid: profile.id,
+            googleId: profile.id,
+            profiles: {
+              create: {
+                fullName: profile.displayName,
+              },
+            },
           },
         });
 
-        let profiles = await prisma.profiles.upsert({
+        await prisma.profiles.upsert({
           where: { userId: user.id },
           update: { userId: user.id },
           create: { userId: user.id },
