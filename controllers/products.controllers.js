@@ -27,29 +27,6 @@ module.exports = {
         file: strFile,
       });
 
-      // const category = await prisma.categorys.upsert({
-      //   where: { categoryName },
-      //   create: {
-      //     categoryName,
-      //   },
-      //   update: {
-      //     categoryName,
-      //   },
-      // });
-
-      // const products = await prisma.products.create({
-      //   data: {
-      //     productName,
-      //     description,
-      //     price: Number(price),
-      //     stock: Number(stock),
-      //     productPicture: url,
-      //     fileId: fileId,
-      //     userId: req.users.id,
-      //     categoryId: category.id,
-      //   },
-      // });
-
       const products = await prisma.products.create({
         data: {
           productName,
@@ -132,6 +109,57 @@ module.exports = {
         message: 'OK!',
         err: null,
         data: { pagination, products },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Feature Detail Products
+  detailProducts: async (req, res, next) => {
+    try {
+      let { productId } = req.params;
+
+      const products = await prisma.products.findUnique({
+        where: {
+          id: Number(productId),
+        },
+        include: {
+          users: {
+            select: {
+              profiles: {
+                select: {
+                  fullName: true,
+                },
+              },
+            },
+          },
+          categories: {
+            select: {
+              categorys: {
+                select: {
+                  categoryName: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!products) {
+        return res.status(400).json({
+          status: false,
+          message: 'Bad Request',
+          err: 'Post with product id does not exist',
+          data: null,
+        });
+      }
+
+      return res.status(200).json({
+        status: true,
+        message: 'OK!',
+        err: null,
+        data: products,
       });
     } catch (err) {
       next(err);
