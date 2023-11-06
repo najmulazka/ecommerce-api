@@ -7,15 +7,15 @@ module.exports = {
   // Feature input product
   inputProduct: async (req, res, next) => {
     try {
-      let { nama_produk, deskripsi, harga, stok, nama_kategori } = req.body;
-      if (!nama_produk) {
-        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing nama produk', data: null });
+      let { productName, description, price, stock, categoryName } = req.body;
+      if (!productName) {
+        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing product name', data: null });
       }
-      if (!harga) {
-        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing harga', data: null });
+      if (!price) {
+        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing price', data: null });
       }
-      if (!stok) {
-        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing stok', data: null });
+      if (!stock) {
+        return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing stock', data: null });
       }
       if (!req.file) {
         return res.status(400).json({ status: false, message: 'Bad Request!', err: 'Missing file', data: null });
@@ -27,30 +27,67 @@ module.exports = {
         file: strFile,
       });
 
-      const category = await prisma.categorys.upsert({
-        where: { nama_kategori },
-        create: {
-          nama_kategori,
-        },
-        update: {
-          nama_kategori,
-        },
-      });
+      // const category = await prisma.categorys.upsert({
+      //   where: { categoryName },
+      //   create: {
+      //     categoryName,
+      //   },
+      //   update: {
+      //     categoryName,
+      //   },
+      // });
 
-      const product = await prisma.products.create({
+      // const products = await prisma.products.create({
+      //   data: {
+      //     productName,
+      //     description,
+      //     price: Number(price),
+      //     stock: Number(stock),
+      //     productPicture: url,
+      //     fileId: fileId,
+      //     userId: req.users.id,
+      //     categoryId: category.id,
+      //   },
+      // });
+
+      const products = await prisma.products.create({
         data: {
-          nama_produk,
-          product_picture: url,
+          productName,
+          description,
+          price: Number(price),
+          stock: Number(stock),
+          productPicture: url,
           fileId: fileId,
-          deskripsi,
-          harga: Number(harga),
-          stok: Number(stok),
-          categoriId: category.id,
           userId: req.users.id,
+          categories: {
+            create: [
+              {
+                categorys: {
+                  connectOrCreate: {
+                    where: {
+                      categoryName,
+                    },
+                    create: {
+                      categoryName,
+                    },
+                  },
+                },
+              },
+            ],
+          },
         },
       });
 
-      if (!product) {
+      const categories = await prisma.CategoriesOnProducts.findMany({
+        where: {
+          productId: products.id,
+        },
+        select: {
+          categoryId: true,
+        },
+      });
+
+      if (!products) {
         return res.status(400).json({ status: false, message: 'Bad Request!', err: null, data: null });
       }
 
@@ -58,7 +95,7 @@ module.exports = {
         status: true,
         message: 'Created!',
         err: null,
-        data: product,
+        data: { products, categories },
       });
     } catch (err) {
       next(err);
@@ -73,6 +110,13 @@ module.exports = {
       page = Number(page);
 
       const products = await prisma.products.findMany({
+        include: {
+          categories: {
+            select: {
+              categoryId: true,
+            },
+          },
+        },
         skip: (page - 1) * limit,
         take: limit,
       });
